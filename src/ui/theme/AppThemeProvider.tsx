@@ -24,9 +24,10 @@ const theme = createTheme({
   typography: {
     fontFamily: 'Roboto, Arial, "Helvetica Neue", sans-serif',
     h1: {
-      fontSize: "2.3rem",
+      fontSize: "clamp(2.1rem, 5vw, 4.2rem)",
       fontWeight: 700,
-      lineHeight: 1.15
+      lineHeight: 1.02,
+      letterSpacing: "-0.035em"
     },
     h2: {
       fontSize: "1.55rem",
@@ -41,13 +42,39 @@ const theme = createTheme({
     MuiButton: {
       defaultProps: {
         disableElevation: true
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          fontWeight: 800,
+          textTransform: "none"
+        },
+        containedPrimary: {
+          background: "linear-gradient(135deg, #315c50, #47796b)",
+          boxShadow: "0 14px 30px rgba(49, 92, 80, 0.28)"
+        }
       }
     },
     MuiCard: {
       styleOverrides: {
         root: {
           border: "1px solid #ded7cd",
+          borderRadius: 14,
           boxShadow: "none"
+        }
+      }
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 14
+        }
+      }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 700
         }
       }
     }

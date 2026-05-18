@@ -41,7 +41,7 @@ export default async function ArticleDetailsPage({ params }: Params<{ id: string
         <Typography color="text.secondary">{post.body}</Typography>
       </Box>
 
-      <Card variant="outlined">
+      <Card className="content-panel" variant="outlined">
         <CardContent>
           <Typography variant="h2" sx={{ mb: 2 }}>
             Comments

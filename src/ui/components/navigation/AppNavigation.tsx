@@ -21,6 +21,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import styles from "./AppNavigation.module.css";
 
 type NavItem = {
   title: string;
@@ -54,7 +55,17 @@ function NavList({ items }: { items: NavItem[] }) {
             component={Link}
             href={item.href}
             selected={selected}
-            sx={{ borderRadius: 1, minHeight: 44 }}
+            sx={{
+              borderRadius: 2,
+              minHeight: 44,
+              transition: "transform 160ms ease, background-color 160ms ease",
+              "&.Mui-selected": {
+                bgcolor: "rgba(49, 92, 80, 0.12)"
+              },
+              "&:hover": {
+                transform: "translateX(4px)"
+              }
+            }}
           >
             <ListItemIcon sx={{ minWidth: 38 }}>
               <Icon color={selected ? "primary" : "inherit"} fontSize="small" />
@@ -69,7 +80,7 @@ function NavList({ items }: { items: NavItem[] }) {
 
 export function SiteLayoutShell({ children }: { children: ReactNode }) {
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box className="page-shell">
       <Box
         component="header"
         sx={{
@@ -80,7 +91,7 @@ export function SiteLayoutShell({ children }: { children: ReactNode }) {
           zIndex: 10
         }}
       >
-        <Box sx={{ maxWidth: 1180, mx: "auto", px: 3, py: 2, display: "flex", alignItems: "center", gap: 2 }}>
+        <Box className="mx-auto flex max-w-[1180px] items-center gap-2 px-4 py-3 tablet:px-6">
           <Button component={Link} href="/" color="inherit" sx={{ fontWeight: 800 }}>
             Home
           </Button>
@@ -91,17 +102,15 @@ export function SiteLayoutShell({ children }: { children: ReactNode }) {
         sx={{
           maxWidth: 1180,
           mx: "auto",
-          px: 3,
+          px: { xs: 2, md: 3 },
           py: 4,
           display: "grid",
           gridTemplateColumns: { xs: "1fr", md: "240px minmax(0, 1fr)" },
           gap: 3
         }}
       >
-        <Paper component="aside" variant="outlined" sx={{ p: 2, alignSelf: "start" }}>
-          <Typography variant="overline" color="text.secondary" sx={{ px: 1 }}>
-            Menu
-          </Typography>
+        <Paper className={styles.aside} component="aside" variant="outlined" sx={{ p: 2, alignSelf: "start" }}>
+          <span className={styles.menuTitle}>Menu</span>
           <NavList items={mainItems} />
         </Paper>
         <Box component="main">{children}</Box>
@@ -113,7 +122,7 @@ export function SiteLayoutShell({ children }: { children: ReactNode }) {
 export function ArticlesLayoutShell({ children }: { children: ReactNode }) {
   return (
     <Stack spacing={3}>
-      <Paper variant="outlined" sx={{ p: 2 }}>
+      <Paper className={styles.articleMenu} variant="outlined" sx={{ p: 2 }}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}

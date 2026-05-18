@@ -7,8 +7,11 @@ const favoriteIds = [3, 7, 10];
 
 export default function FavoriteArticlesPage() {
   return (
-    <Stack spacing={2}>
-      <Typography variant="h1">Favorite articles</Typography>
+    <Stack spacing={3}>
+      <div className="section-heading">
+        <Typography variant="h1">Favorite articles</Typography>
+        <Typography color="text.secondary">Each card loads independently</Typography>
+      </div>
       {favoriteIds.map((id) => (
         <Suspense key={id} fallback={<FavoriteArticleSkeleton />}>
           <FavoriteArticle id={id} />

@@ -1,0 +1,12 @@
+:root {
+  --color-page: #f5f2ed;
+  --color-panel: #fffaf3;
+  --color-paper: #ffffff;
+  --color-ink: #1f2933;
+  --color-muted: #667085;
+  --color-brand: #315c50;
+  --color-accent: #9b5f43;
+  --color-line: #ded7cd;
+  --shadow-soft: 0 18px 45px rgba(31, 41, 51, 0.08);
+  --shadow-lift: 0 24px 70px rgba(49, 92, 80, 0.2);
+}

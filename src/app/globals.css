@@ -1,4 +1,8 @@
+@config "../../tailwind.config.mjs";
 @import "tailwindcss";
+@import "../styles/variables.css";
+@import "../styles/typography.css";
+@import "../styles/layout.css";
 
 * {
   box-sizing: border-box;
@@ -11,7 +15,7 @@ body {
 }
 
 body {
-  background: #f5f2ed;
+  background: var(--color-page);
 }
 
 a {

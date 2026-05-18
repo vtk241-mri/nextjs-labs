@@ -1,0 +1,23 @@
+.aside {
+  border-color: var(--color-line);
+  background: rgba(255, 250, 243, 0.9);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.menuTitle {
+  display: block;
+  padding: 0 0.5rem 0.5rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.articleMenu {
+  border-color: var(--color-line);
+  background: rgba(255, 250, 243, 0.92);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
