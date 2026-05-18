@@ -1,5 +1,6 @@
 node_modules
 .next
+.claude
 out
 dist
 .env*.local
