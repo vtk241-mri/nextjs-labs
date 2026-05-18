@@ -5,6 +5,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import LockIcon from "@mui/icons-material/Lock";
 import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import SettingsIcon from "@mui/icons-material/Settings";
+import StorageIcon from "@mui/icons-material/Storage";
 import {
   Box,
   Button,
@@ -31,6 +32,7 @@ type NavItem = {
 
 const mainItems: NavItem[] = [
   { title: "Articles", href: "/articles", icon: ArticleIcon },
+  { title: "Posts (DB)", href: "/posts", icon: StorageIcon },
   { title: "Settings", href: "/profile/settings", icon: SettingsIcon },
   { title: "Security", href: "/profile/security", icon: LockIcon }
 ];
