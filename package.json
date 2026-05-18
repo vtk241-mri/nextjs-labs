@@ -9,8 +9,10 @@
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:push": "cross-env TARGET_ENV=development drizzle-kit push",
+    "db:push:prod": "cross-env TARGET_ENV=production drizzle-kit push",
+    "db:seed": "cross-env TARGET_ENV=development tsx src/db/seed.ts",
+    "db:seed:prod": "cross-env TARGET_ENV=production tsx src/db/seed.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -30,6 +32,7 @@
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "autoprefixer": "^10.5.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",

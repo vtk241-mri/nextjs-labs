@@ -2,7 +2,9 @@ import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
-config({ path: ".env.local" });
+const target = process.env.TARGET_ENV ?? "development";
+config({ path: `.env.${target}.local` });
+config({ path: ".env.local", override: false });
 config({ path: ".env", override: false });
 
 import { comments, posts } from "./schema";
@@ -22,7 +24,7 @@ async function main() {
     throw new Error("DATABASE_URL is not set in .env.local");
   }
 
-  console.log("→ Connecting to database...");
+  console.log(`→ Connecting to database (TARGET_ENV=${target})...`);
   const sql = neon(process.env.DATABASE_URL);
   const db = drizzle(sql, { schema: { posts, comments } });
 
