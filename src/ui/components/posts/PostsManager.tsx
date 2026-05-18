@@ -1,128 +1,133 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Alert,
   Box,
   Button,
   Card,
-  CardActions,
   CardContent,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
-  IconButton,
+  Grid,
+  Skeleton,
+  Snackbar,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import { useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 
 import type { Post } from "@/db/schema";
+import { jsonFetcher, sendJSON } from "@/lib/swr";
+
+import { PostCardEditable } from "./PostCardEditable";
+
+const POSTS_KEY = "/api/posts";
 
 type DraftPost = { userId: string; title: string; body: string };
-
 const emptyDraft: DraftPost = { userId: "1", title: "", body: "" };
 
 export function PostsManager() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: posts, error, isLoading, isValidating } = useSWR<Post[]>(
+    POSTS_KEY,
+    jsonFetcher,
+    { revalidateOnFocus: false },
+  );
+  const { mutate } = useSWRConfig();
+
   const [draft, setDraft] = useState<DraftPost>(emptyDraft);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Post | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Post | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/posts", { cache: "no-store" });
-      if (!res.ok) throw new Error(`GET /api/posts → ${res.status}`);
-      setPosts((await res.json()) as Post[]);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  async function handleCreate(event: React.FormEvent) {
+  async function createPost(event: React.FormEvent) {
     event.preventDefault();
+    setActionError(null);
     setSubmitting(true);
-    setError(null);
     try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: Number(draft.userId),
-          title: draft.title,
-          body: draft.body,
-        }),
+      const created = await sendJSON<Post>(POSTS_KEY, "POST", {
+        userId: Number(draft.userId),
+        title: draft.title,
+        body: draft.body,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? `POST → ${res.status}`);
+      await mutate<Post[]>(
+        POSTS_KEY,
+        (prev) => (prev ? [created, ...prev] : [created]),
+        { revalidate: false },
+      );
       setDraft(emptyDraft);
-      setPosts((prev) => [json as Post, ...prev]);
+      setToast(`Post #${created.id} created`);
     } catch (e) {
-      setError((e as Error).message);
+      setActionError((e as Error).message);
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm(`Delete post #${id}?`)) return;
-    setError(null);
+  async function updatePost(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editing) return;
+    setActionError(null);
+    setSubmitting(true);
     try {
-      const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json?.error ?? `DELETE → ${res.status}`);
-      }
-      setPosts((prev) => prev.filter((p) => p.id !== id));
+      const updated = await sendJSON<Post>(`${POSTS_KEY}/${editing.id}`, "PATCH", {
+        title: editing.title,
+        body: editing.body,
+      });
+      await mutate<Post[]>(
+        POSTS_KEY,
+        (prev) => prev?.map((p) => (p.id === updated.id ? updated : p)),
+        { revalidate: false },
+      );
+      setEditing(null);
+      setToast(`Post #${updated.id} updated`);
     } catch (e) {
-      setError((e as Error).message);
+      setActionError((e as Error).message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  async function handleUpdate(event: React.FormEvent) {
-    event.preventDefault();
-    if (!editing) return;
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setActionError(null);
     setSubmitting(true);
-    setError(null);
     try {
-      const res = await fetch(`/api/posts/${editing.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editing.title, body: editing.body }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? `PATCH → ${res.status}`);
-      const updated = json as Post;
-      setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      setEditing(null);
+      await sendJSON<{ deleted: Post }>(`${POSTS_KEY}/${id}`, "DELETE");
+      await mutate<Post[]>(
+        POSTS_KEY,
+        (prev) => prev?.filter((p) => p.id !== id),
+        { revalidate: false },
+      );
+      setPendingDelete(null);
+      setToast(`Post #${id} deleted`);
     } catch (e) {
-      setError((e as Error).message);
+      setActionError((e as Error).message);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Stack spacing={3}>
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="h2" sx={{ mb: 2 }}>
+    <Stack spacing={3} sx={{ mt: 3 }}>
+      <Card className="content-panel" variant="outlined">
+        <CardContent sx={{ pt: 3 }}>
+          <Typography variant="h2" sx={{ mb: 0.5 }}>
             New post
           </Typography>
-          <Box component="form" onSubmit={handleCreate} sx={{ display: "grid", gap: 2 }}>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            Sent as <code>POST /api/posts</code>.
+          </Typography>
+          <Box component="form" onSubmit={createPost} sx={{ display: "grid", gap: 2 }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 label="User ID"
@@ -150,7 +155,12 @@ export function PostsManager() {
               minRows={3}
             />
             <Box>
-              <Button type="submit" variant="contained" disabled={submitting}>
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={<AddIcon />}
+                disabled={submitting}
+              >
                 {submitting ? "Saving..." : "Create post"}
               </Button>
             </Box>
@@ -158,47 +168,72 @@ export function PostsManager() {
         </CardContent>
       </Card>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {actionError && (
+        <Alert severity="error" onClose={() => setActionError(null)}>
+          {actionError}
+        </Alert>
+      )}
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h2">All posts ({posts.length})</Typography>
-        <Button onClick={() => void load()} disabled={loading}>
-          {loading ? "Loading..." : "Refresh"}
+      <div className="section-heading">
+        <Typography variant="h2">
+          All posts {posts ? `(${posts.length})` : ""}
+        </Typography>
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={() => void mutate(POSTS_KEY)}
+          disabled={isValidating}
+        >
+          {isValidating ? "Refreshing..." : "Refresh"}
         </Button>
-      </Stack>
+      </div>
 
-      <Stack spacing={2}>
-        {posts.map((post) => (
-          <Card key={post.id} variant="outlined">
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                #{post.id} · user {post.userId}
-              </Typography>
-              <Typography variant="h3" sx={{ mt: 0.5 }}>
-                {post.title}
-              </Typography>
-              <Typography color="text.secondary" sx={{ mt: 1 }}>
-                {post.body}
-              </Typography>
-            </CardContent>
-            <CardActions sx={{ justifyContent: "flex-end" }}>
-              <IconButton aria-label="edit" onClick={() => setEditing(post)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton aria-label="delete" onClick={() => void handleDelete(post.id)}>
-                <DeleteIcon />
-              </IconButton>
-            </CardActions>
-          </Card>
-        ))}
-        {!loading && posts.length === 0 && (
-          <Typography color="text.secondary">No posts yet — create one above.</Typography>
-        )}
-      </Stack>
+      {error && (
+        <Alert severity="error">Failed to load posts: {(error as Error).message}</Alert>
+      )}
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
+      {isLoading && (
+        <Grid container spacing={2}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Grid key={i} size={{ xs: 12, md: 6 }}>
+              <Card variant="outlined" sx={{ p: 2 }}>
+                <Skeleton variant="text" width="40%" />
+                <Skeleton variant="text" width="80%" height={36} />
+                <Skeleton variant="rectangular" height={80} sx={{ mt: 1 }} />
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {posts && (
+        <Grid container spacing={2}>
+          {posts.map((post) => (
+            <Grid key={post.id} size={{ xs: 12, md: 6 }}>
+              <PostCardEditable
+                post={post}
+                onEdit={setEditing}
+                onDelete={setPendingDelete}
+              />
+            </Grid>
+          ))}
+          {posts.length === 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Typography color="text.secondary">
+                No posts yet — create one above.
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
+      )}
+
+      <Dialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>Edit post #{editing?.id}</DialogTitle>
-        <Box component="form" onSubmit={handleUpdate}>
+        <Box component="form" onSubmit={updatePost}>
           <DialogContent sx={{ display: "grid", gap: 2 }}>
             <TextField
               label="Title"
@@ -224,11 +259,42 @@ export function PostsManager() {
           <DialogActions>
             <Button onClick={() => setEditing(null)}>Cancel</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              {submitting ? "Saving..." : "Save"}
+              {submitting ? "Saving..." : "Save changes"}
             </Button>
           </DialogActions>
         </Box>
       </Dialog>
+
+      <Dialog open={pendingDelete !== null} onClose={() => setPendingDelete(null)}>
+        <DialogTitle>Delete post #{pendingDelete?.id}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will remove the post and its comments. The action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingDelete(null)}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void confirmDelete()}
+            disabled={submitting}
+          >
+            {submitting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={toast !== null}
+        autoHideDuration={3000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="success" onClose={() => setToast(null)} variant="filled">
+          {toast}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 }
