@@ -45,7 +45,7 @@ function NavList({ items }: { items: NavItem[] }) {
   return (
     <List disablePadding sx={{ display: "grid", gap: 0.75 }}>
       {items.map((item) => {
-        const selected = item.href === "/articles" ? pathname === item.href : pathname.startsWith(item.href);
+        const selected = item.href === "/articles" ? pathname === item.href : pathname === item.href;
         const Icon = item.icon;
 
         return (
